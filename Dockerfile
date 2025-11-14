@@ -5,11 +5,12 @@ WORKDIR /app
 # - download links
 ENV MODIFIED_DERPER_GIT=https://github.com/veritas501/tailscale.git
 # ==========================
-
+RUN sed -i 's#https\?://dl-cdn.alpinelinux.org/alpine#https://mirrors.tuna.tsinghua.edu.cn/alpine#g' /etc/apk/repositories
 # install necessary packages && compile derper
 RUN apk update && apk add --no-cache git \
     && git clone $MODIFIED_DERPER_GIT tailscale --depth 1 \
     && cd /app/tailscale/cmd/derper \
+    && go env -w GOPROXY=https://goproxy.cn,direct \
     && go build -ldflags "-s -w" -o /app/derper \
     && rm -rf /app/tailscale
 
@@ -30,7 +31,8 @@ COPY build_cert.sh /app/
 COPY --from=builder /app/derper /app/derper
 
 # install necessary packages && build self-signed certs
-RUN apk update \
+RUN sed -i 's#https\?://dl-cdn.alpinelinux.org/alpine#https://mirrors.tuna.tsinghua.edu.cn/alpine#g' /etc/apk/repositories \
+    &&apk update \
     && apk add --no-cache openssl \
     && chmod +x /app/derper \
     && chmod +x /app/build_cert.sh \
